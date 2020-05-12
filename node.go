@@ -32,8 +32,25 @@ func (n TextNode) Render(context Context) string {
 }
 
 type BlockNode struct {
-	token Token
-	nodes []Node
+	token       Token
+	nodes       []Node
+	placeholder bool
+}
+
+func NewBlockNode(token Token, parsedNodes []Node, context *Context) BlockNode {
+	bits := strings.Split(token.content, " ")
+	parameter := bits[1]
+
+	var newNode BlockNode
+
+	if _, exists := context.GetRenderContext(parameter); exists {
+		newNode = BlockNode{token, parsedNodes, false}
+	} else {
+		newNode = BlockNode{token, parsedNodes, true}
+
+	}
+	context.AddRenderContext(parameter, newNode)
+	return newNode
 }
 
 func (n BlockNode) Render(context Context) string {
@@ -44,45 +61,54 @@ func (n BlockNode) Render(context Context) string {
 	fmt.Println("BLOCK NODE PARAMETER")
 	fmt.Println(parameter)
 
-	if nodeList, exists := context.GetRenderContext(parameter); exists {
-		return RenderNodeList(nodeList, context)
+	if n.placeholder == true {
+		node, _ := context.GetRenderContext(parameter)
+		result = RenderNodeList(node.(BlockNode).nodes, context)
+
 	} else {
-		context.AddRenderContext(parameter, n.nodes)
-		return "testng"
+		result = "test"
 	}
+
+	// if nodeList, exists := context.GetRenderContext(parameter); exists {
+	// 	return RenderNodeList(nodeList, context)
+	// } else {
+	// 	context.AddRenderContext(parameter, n.nodes)
+	// 	return RenderNodeList(n.nodes, context)
+	// }
 	return result
 }
 
 type ExtendsNode struct {
 	token Token
+	nodes []Node
 }
 
 func (n ExtendsNode) Render(context Context) string {
-	bits := strings.Split(n.token.content, " ")
-	parameter := bits[1]
-	templateSource := ReadTemplate(parameter)
 
-	lexer := NewLexer(templateSource)
-	parser := Parser{lexer.Tokenize(), "extends parser"}
-	template := Template{parser, templateSource}
-	//template := NewTemplate(templateSource)
-	r := template.Render(context)
-
-	fmt.Println("EXTENBDS NODE")
-	fmt.Println(r)
-	return r
+	return RenderNodeList(n.nodes, context)
 }
 
-func GetBlockScopedNode(p *Parser, token Token, command string, currentLine int) Node {
+func NewExtendsNode(token Token, context *Context) ExtendsNode {
+	bits := strings.Split(token.content, " ")
+	parameter := bits[1]
+	templateSource := ReadTemplate(parameter)
+	lexer := NewLexer(templateSource)
+	parser := Parser{lexer.Tokenize(), "extends parser"}
+	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens), context)
+	return ExtendsNode{token, nodes}
+
+}
+
+func GetBlockScopedNode(p *Parser, token Token, command string, currentLine int, context *Context) Node {
 	var node Node
 
 	switch command {
 	case "block":
-		nodeList := p.Parse([]string{"endblock"}, currentLine+1, len(p.tokens))
-		node = BlockNode{token, nodeList}
+		nodeList := p.Parse([]string{"endblock"}, currentLine+1, len(p.tokens), context)
+		node = NewBlockNode(token, nodeList, context)
 
 	case "extends":
-		node = ExtendsNode{token}
+		node = NewExtendsNode(token, context)
 	default:
 		node = BlankNode{}
 

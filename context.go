@@ -9,18 +9,18 @@ import (
 
 type Context struct {
 	data           []byte
-	render_context map[string][]Node
+	render_context map[string]Node
 }
 
-func (c *Context) AddRenderContext(key string, nodes []Node) {
-	c.render_context[key] = nodes
+func (c *Context) AddRenderContext(key string, node Node) {
+	c.render_context[key] = node
 }
 
-func (c Context) GetRenderContext(key string) ([]Node, bool) {
-	if nodes, found := c.render_context[key]; found {
-		return nodes, found
+func (c Context) GetRenderContext(key string) (Node, bool) {
+	if node, found := c.render_context[key]; found {
+		return node, found
 	}
-	return make([]Node, 0, 0), false
+	return BlankNode{}, false
 }
 
 func (c Context) Resolve(variable string) string {
@@ -39,6 +39,6 @@ func (c Context) Resolve(variable string) string {
 func NewContext(source string) Context {
 	return Context{
 		[]byte(source),
-		make(map[string][]Node),
+		make(map[string]Node),
 	}
 }

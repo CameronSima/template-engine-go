@@ -10,7 +10,7 @@ type Parser struct {
 	//tagFuncs map[string]TagFunc
 }
 
-func (p *Parser) Parse(parseUntil []string, start int, end int) []Node {
+func (p *Parser) Parse(parseUntil []string, start int, end int, context *Context) []Node {
 
 	nodes := make([]Node, 0)
 	for i, token := range p.tokens[start:end] {
@@ -35,7 +35,7 @@ func (p *Parser) Parse(parseUntil []string, start int, end int) []Node {
 				return nodes
 			}
 
-			node := GetBlockScopedNode(p, token, command, i)
+			node := GetBlockScopedNode(p, token, command, i, context)
 			nodes = append(nodes, node)
 		}
 	}

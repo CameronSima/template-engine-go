@@ -6,7 +6,7 @@ type Template struct {
 }
 
 func (t Template) Render(context Context) string {
-	nodes := t.parser.Parse(make([]string, 0), 0, len(t.parser.tokens))
+	nodes := t.parser.Parse(make([]string, 0), 0, len(t.parser.tokens), &context)
 	return RenderNodeList(nodes, context)
 }
 
