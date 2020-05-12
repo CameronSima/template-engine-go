@@ -5,15 +5,19 @@ import (
 )
 
 type Parser struct {
-	tokens []Token
-	id     string
-	//tagFuncs map[string]TagFunc
+	tokens    []Token
+	id        string
+	skipUntil int
 }
 
 func (p *Parser) Parse(parseUntil []string, start int, end int, context *Context) []Node {
 
 	nodes := make([]Node, 0)
 	for i, token := range p.tokens[start:end] {
+
+		if p.skipUntil != 0 && i < p.skipUntil {
+			continue
+		}
 
 		switch token.tokenType {
 		case TOKEN_VAR:
@@ -32,6 +36,7 @@ func (p *Parser) Parse(parseUntil []string, start int, end int, context *Context
 			command := bits[0]
 
 			if Contains(parseUntil, command) {
+				p.skipUntil = start + i
 				return nodes
 			}
 
@@ -40,10 +45,6 @@ func (p *Parser) Parse(parseUntil []string, start int, end int, context *Context
 		}
 	}
 	return nodes
-}
-
-func (p *Parser) prepend(token Token) {
-	p.tokens = append([]Token{token}, p.tokens...)
 }
 
 // func NewParser(tokens []Token) Parser {

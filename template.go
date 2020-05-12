@@ -12,6 +12,6 @@ func (t Template) Render(context Context) string {
 
 func NewTemplate(source string) Template {
 	lexer := NewLexer(source)
-	parser := Parser{lexer.Tokenize(), "main parser"}
+	parser := Parser{lexer.Tokenize(), "main parser", 0}
 	return Template{parser, source}
 }

@@ -93,7 +93,7 @@ func NewExtendsNode(token Token, context *Context) ExtendsNode {
 	parameter := bits[1]
 	templateSource := ReadTemplate(parameter)
 	lexer := NewLexer(templateSource)
-	parser := Parser{lexer.Tokenize(), "extends parser"}
+	parser := Parser{lexer.Tokenize(), "extends parser", 0}
 	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens), context)
 	return ExtendsNode{token, nodes}
 
