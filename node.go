@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"github.com/buger/jsonparser"
 )
 
 type Node interface {
@@ -19,8 +21,7 @@ type VariableNode struct {
 
 func (n VariableNode) Render(context Context) string {
 	variable := strings.Replace(n.token.content, " ", "", -1)
-	value := context.Resolve(variable)
-	return value
+	return context.Resolve(variable)
 }
 
 type TextNode struct {
@@ -28,9 +29,17 @@ type TextNode struct {
 }
 
 func (n TextNode) Render(context Context) string {
+	stripped := strings.Replace(n.token.content, " ", "", -1)
+	if stripped == "" {
+		return stripped
+	}
 	return n.token.content
+
 }
 
+// ------------- Block-typed nodes ---------------
+
+// base block-node
 type BlockNode struct {
 	token       Token
 	nodes       []Node
@@ -40,7 +49,6 @@ type BlockNode struct {
 func NewBlockNode(token Token, parsedNodes []Node, context *Context) BlockNode {
 	bits := strings.Split(token.content, " ")
 	parameter := bits[1]
-
 	var newNode BlockNode
 
 	if _, exists := context.GetRenderContext(parameter); exists {
@@ -58,23 +66,13 @@ func (n BlockNode) Render(context Context) string {
 	bits := strings.Split(n.token.content, " ")
 	parameter := bits[1]
 
-	fmt.Println("BLOCK NODE PARAMETER")
-	fmt.Println(parameter)
-
 	if n.placeholder == true {
 		node, _ := context.GetRenderContext(parameter)
 		result = RenderNodeList(node.(BlockNode).nodes, context)
 
 	} else {
-		result = "test"
+		result = ""
 	}
-
-	// if nodeList, exists := context.GetRenderContext(parameter); exists {
-	// 	return RenderNodeList(nodeList, context)
-	// } else {
-	// 	context.AddRenderContext(parameter, n.nodes)
-	// 	return RenderNodeList(n.nodes, context)
-	// }
 	return result
 }
 
@@ -84,7 +82,6 @@ type ExtendsNode struct {
 }
 
 func (n ExtendsNode) Render(context Context) string {
-
 	return RenderNodeList(n.nodes, context)
 }
 
@@ -92,54 +89,51 @@ func NewExtendsNode(token Token, context *Context) ExtendsNode {
 	bits := strings.Split(token.content, " ")
 	parameter := bits[1]
 	templateSource := ReadTemplate(parameter)
-	lexer := NewLexer(templateSource)
-	parser := Parser{lexer.Tokenize(), "extends parser", 0}
-	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens), context)
+	parser := NewParser(templateSource, context)
+	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens))
 	return ExtendsNode{token, nodes}
-
 }
 
-func GetBlockScopedNode(p *Parser, token Token, command string, currentLine int, context *Context) Node {
-	var node Node
+type ForNode struct {
+	token         Token
+	nodes         []Node
+	loopVariable  string
+	loopArrayName string
+}
 
-	switch command {
-	case "block":
-		nodeList := p.Parse([]string{"endblock"}, currentLine+1, len(p.tokens), context)
-		node = NewBlockNode(token, nodeList, context)
-
-	case "extends":
-		node = NewExtendsNode(token, context)
-	default:
-		node = BlankNode{}
-
+func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
+	bits := strings.Split(token.content, " ")
+	loopVariable := bits[1]
+	loopArrayName := bits[3]
+	return ForNode{
+		token,
+		parsedNodes,
+		loopVariable,
+		loopArrayName,
 	}
-	return node
-
 }
 
-// func RenderBlock(context Context, n Node, command string, variable string) string {
-// 	if node, exists := context.GetRenderContext(variable); exists {
-// 		fmt.Println("PULLING CONTEXT")
+func (n ForNode) Render(context Context) string {
+	renderedNodes := make([]Node, 0)
+	keys := strings.Split(n.loopArrayName, ".")
 
-// 		fmt.Println(node.Render(context))
-// 		return node.Render(context)
-// 	} else {
-// 		fmt.Println("ADDING TO CONTEXT")
+	for _, node := n.nodes {
+		switch type(node) {
+		case VariableNode:
 
-// 		context.AddRenderContext(variable, n)
-// 		return ""
-// 	}
-// }
+		
+		}
+	}
 
-// func RenderExtends(context Context, variable string) string {
-// 	templateSource := ReadTemplate(variable)
+	index := 0
+	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		fmt.Println(string(value))
 
-// 	fmt.Println("EXTENDS NODE RENDER")
-// 	fmt.Println(templateSource)
+		node := n.nodes[0].(VariableNode)
+		node.Render()
 
-// 	lexer := NewLexer(templateSource)
-// 	parser := Parser{lexer.Tokenize(), "extends parser"}
-// 	template := Template{parser, templateSource}
-// 	//template := NewTemplate(templateSource)
-// 	return template.Render(context)
-// }
+
+	}, keys...)
+
+	return ""
+}

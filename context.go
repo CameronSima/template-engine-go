@@ -31,10 +31,19 @@ func (c Context) Resolve(variable string) string {
 		fmt.Println("Error resolving variable: " + variable)
 		fmt.Println(err)
 	}
-
 	// TODO: use t (type) to return typed variable
 	return string(byteArr)
 }
+
+// func (c Context) ResolveArray(variable string) []string {
+// 	values := make([]string, 0)
+// 	keys := strings.Split(variable, ".")
+
+// 	jsonparser.ArrayEach(c.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+// 		fmt.Println(jsonparser.Get(value)
+// 	}, keys...)
+
+// }
 
 func NewContext(source string) Context {
 	return Context{

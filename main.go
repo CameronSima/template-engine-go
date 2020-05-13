@@ -8,9 +8,9 @@ import (
 //export render
 func render(templateName *C.char, context *C.char) *C.char {
 	source := ReadTemplate(C.GoString(templateName))
-	template := NewTemplate(source)
 	c := C.GoString(context)
-	result := template.Render(NewContext(c))
+	template := NewTemplate(source, NewContext(c))
+	result := template.Render()
 
 	fmt.Println("RESULT")
 	fmt.Println(result)

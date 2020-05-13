@@ -18,17 +18,14 @@ type Token struct {
 	lineNumber int
 }
 
-func CreateToken(bits []string, inTag bool, lineNumber int) Token {
+func CreateToken(tokenStr string, isTag bool, lineNumber int) Token {
 	var token Token
 
-	if inTag {
-		content := ""
-
-		if len(bits) > 1 {
-			content = strings.TrimSpace(bits[1])
-		}
-
-		openingTag := strings.Replace(bits[0], " ", "", -1)
+	if isTag {
+		tokenStr = strings.TrimSpace(tokenStr)
+		openingTag := tokenStr[0:2]
+		content := tokenStr[2 : len(tokenStr)-2]
+		content = strings.TrimSpace(content)
 
 		switch openingTag {
 		case VARIABLE_TAG_START:
@@ -39,9 +36,10 @@ func CreateToken(bits []string, inTag bool, lineNumber int) Token {
 
 		case COMMENT_TAG_START:
 			token = Token{TOKEN_COMMENT, "", lineNumber}
+
 		}
 	} else {
-		token = Token{TOKEN_TEXT, bits[0], lineNumber}
+		token = Token{TOKEN_TEXT, tokenStr, lineNumber}
 	}
 	return token
 }

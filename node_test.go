@@ -1,29 +1,31 @@
 package main
 
-// import (
-// 	"fmt"
-// 	"testing"
-// )
+import (
+	"fmt"
+	"testing"
 
-// func TestBlockNode(t *testing.T) {
-// 	var testContext = `{"username": "cameron"}`
-// 	var testSource = `
-// 		{% block content %}
-// 		<div>
-// 			<span>hi</span>
-// 			<div>{{ username }}</div>
-// 			<p>hi</p>
-// 		</div>
-// 		{% endblock %}`
+	"github.com/buger/jsonparser"
+)
 
-// 	lexer := NewLexer(testSource)
-// 	parser := NewParser(lexer.Tokenize())
-// 	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens))
+func TestBlockNode(t *testing.T) {
+	var testContext = `{"names": ["cameron", "bob"]}`
+	var testSource = `
+	{% for name in names %}
+		<p>{{ name }}</p>
+	 {% endfor %}`
 
-// 	for _, n := range nodes {
-// 		fmt.Println("NODE")
-// 		fmt.Println(n.Render(NewContext(testContext)))
-// 	}
+	c := NewContext(testContext)
+	parser := NewParser(testSource, &c)
+	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens))
+	forNode := nodes[1].(ForNode)
+	fmt.Println(forNode)
+	fmt.Println(forNode.loopArrayName)
+	fmt.Println(forNode.Render(c))
+	//f := c.Resolve("names")
 
-// 	fmt.Println(len(nodes))
-// }
+	jsonparser.ArrayEach(c.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		fmt.Println(string(value))
+		fmt.Println(jsonparser.Get(value))
+	}, "names")
+
+}
