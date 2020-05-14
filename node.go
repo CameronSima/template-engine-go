@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -21,7 +20,7 @@ type VariableNode struct {
 
 func (n VariableNode) Render(context Context) string {
 	variable := strings.Replace(n.token.content, " ", "", -1)
-	return context.Resolve(variable)
+	return context.data.Resolve(variable)
 }
 
 type TextNode struct {
@@ -113,27 +112,87 @@ func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
 	}
 }
 
+func GetForLoopData(context Context) []ForLoopVariable {
+	keys := strings.Split(n.loopArrayName, ".")
+	values := make([]ForLoopVariable, 0)
+	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		variable := ForLoopVariable{dataType, value}
+		values = append(values, variable)
+
+	}, keys...)
+	return values
+}
+
 func (n ForNode) Render(context Context) string {
 	renderedNodes := make([]Node, 0)
-	keys := strings.Split(n.loopArrayName, ".")
+	variables := g.GetForLoopData(context)
+	l := len(variables)
 
-	for _, node := n.nodes {
-		switch type(node) {
-		case VariableNode:
+	for i, variable := range variables {
 
-		
+		for i, childNode := range n.nodes {
+			loopContext := NewForLoopContext(i, i-l, i == 0, i == l, n, n.loopVariable)
+
+			switch childNode.(type) {
+			case VariableNode:
+				node := ForLoopVariableNode{
+					childNode,
+					variable,
+					loopContext,
+				}
+				renderedNodes = append(renderedNodes, node)
+			default:
+				renderedNodes = append(renderedNodes, childNode)
+			}
 		}
 	}
 
-	index := 0
-	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-		fmt.Println(string(value))
+	return RenderNodeList(renderedNodes, context)
+}
 
-		node := n.nodes[0].(VariableNode)
-		node.Render()
+type ForLoopVariableNode struct {
+	node         VariableNode
+	variable     ForLoopVariable
+	loopVariable string
+	context      ForLoopContext
+}
 
+func (n ForLoopVariableNode) Render(context *Context) string {
+	keys := strings.Split(n.node.token.content, ".")
+	v := keys[0]
 
-	}, keys...)
+	if v == n.loopVariable {
+		return n.context.Resolve(n.variable)
+	} else {
+		return n.node.Render(context)
+	}
+}
 
-	return ""
+type ForLoopVariable struct {
+	dataType string
+	value    []byte
+}
+
+type ForLoopContext struct {
+	counter      int
+	counter0     int
+	revcoounter  int
+	revcounter0  int
+	first        bool
+	last         bool
+	parent       ForNode
+	loopVariable string
+}
+
+func NewForLoopContext(counter0 int, revcounter0 int, first bool, last bool, parent ForNode, loopVariable string) ForLoopContext {
+	return ForLoopContext{
+		counter0 - 1,
+		counter0,
+		revcounter0 - 1,
+		revcounter0,
+		first,
+		last,
+		parent,
+		loopVariable,
+	}
 }

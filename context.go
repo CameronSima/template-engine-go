@@ -7,8 +7,10 @@ import (
 	"github.com/buger/jsonparser"
 )
 
+type ContextData []byte
+
 type Context struct {
-	data           []byte
+	data           ContextData
 	render_context map[string]Node
 }
 
@@ -23,9 +25,9 @@ func (c Context) GetRenderContext(key string) (Node, bool) {
 	return BlankNode{}, false
 }
 
-func (c Context) Resolve(variable string) string {
+func (c ContextData) Resolve(variable string) string {
 	keys := strings.Split(variable, ".")
-	byteArr, _, _, err := jsonparser.Get(c.data, keys...)
+	byteArr, _, _, err := jsonparser.Get(c, keys...)
 
 	if err != nil {
 		fmt.Println("Error resolving variable: " + variable)

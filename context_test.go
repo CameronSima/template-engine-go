@@ -20,8 +20,8 @@ func TestContext(t *testing.T) {
 	`
 	c := NewContext(testContext)
 
-	value := c.Resolve("user.username")
-	value2 := c.Resolve("user.profile.num_friends")
+	value := c.data.Resolve("user.username")
+	value2 := c.data.Resolve("user.profile.num_friends")
 
 	assert.Equal(t, "cameron", value)
 	assert.Equal(t, "3", value2)

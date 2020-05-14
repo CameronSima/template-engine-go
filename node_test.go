@@ -8,7 +8,7 @@ import (
 )
 
 func TestBlockNode(t *testing.T) {
-	var testContext = `{"names": ["cameron", "bob"]}`
+	var testContext = `{"names": ["cameron", {"key": "value"}}]}`
 	var testSource = `
 	{% for name in names %}
 		<p>{{ name }}</p>
@@ -25,7 +25,9 @@ func TestBlockNode(t *testing.T) {
 
 	jsonparser.ArrayEach(c.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		fmt.Println(string(value))
-		fmt.Println(jsonparser.Get(value))
+		fmt.Println(dataType)
+		fmt.Println(offset)
+
 	}, "names")
 
 }
