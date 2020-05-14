@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -18,6 +19,16 @@ func (c *Context) AddRenderContext(key string, node Node) {
 	c.render_context[key] = node
 }
 
+func (c *Context) AddToContextData(d interface{}, key string) {
+	data, _ := json.Marshal(d)
+
+	value, err := jsonparser.Set(c.data, data, key)
+	if err != nil {
+		fmt.Println("Error adding to context")
+	}
+	c.data = value
+}
+
 func (c Context) GetRenderContext(key string) (Node, bool) {
 	if node, found := c.render_context[key]; found {
 		return node, found
@@ -31,6 +42,8 @@ func (c ContextData) Resolve(variable string) string {
 
 	if err != nil {
 		fmt.Println("Error resolving variable: " + variable)
+		fmt.Println("Context data: ")
+		fmt.Println(string(c))
 		fmt.Println(err)
 	}
 	// TODO: use t (type) to return typed variable

@@ -112,11 +112,11 @@ func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
 	}
 }
 
-func GetForLoopData(context Context) []ForLoopVariable {
+func (n ForNode) GetForLoopData(context Context) []ForLoopVariable {
 	keys := strings.Split(n.loopArrayName, ".")
 	values := make([]ForLoopVariable, 0)
 	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-		variable := ForLoopVariable{dataType, value}
+		variable := ForLoopVariable{string(dataType), value}
 		values = append(values, variable)
 
 	}, keys...)
@@ -124,45 +124,49 @@ func GetForLoopData(context Context) []ForLoopVariable {
 }
 
 func (n ForNode) Render(context Context) string {
-	renderedNodes := make([]Node, 0)
-	variables := g.GetForLoopData(context)
+	var rendered strings.Builder
+	variables := n.GetForLoopData(context)
 	l := len(variables)
 
 	for i, variable := range variables {
 
-		for i, childNode := range n.nodes {
-			loopContext := NewForLoopContext(i, i-l, i == 0, i == l, n, n.loopVariable)
-
+		var node Node
+		for _, childNode := range n.nodes {
 			switch childNode.(type) {
 			case VariableNode:
-				node := ForLoopVariableNode{
-					childNode,
+				loopContext := NewForLoopContext(i, i-l, i == 0, i == l, n, n.loopVariable)
+				context.AddToContextData(loopContext, "forloop")
+				node = ForLoopVariableNode{
+					childNode.(VariableNode),
 					variable,
-					loopContext,
+					n.loopVariable,
 				}
-				renderedNodes = append(renderedNodes, node)
 			default:
-				renderedNodes = append(renderedNodes, childNode)
+				node = childNode
 			}
+			rendered.WriteString(node.Render(context))
 		}
 	}
 
-	return RenderNodeList(renderedNodes, context)
+	return rendered.String()
 }
 
 type ForLoopVariableNode struct {
 	node         VariableNode
 	variable     ForLoopVariable
 	loopVariable string
-	context      ForLoopContext
 }
 
-func (n ForLoopVariableNode) Render(context *Context) string {
+func (n ForLoopVariableNode) Render(context Context) string {
 	keys := strings.Split(n.node.token.content, ".")
 	v := keys[0]
+	lookupVariable := strings.Join(keys[1:len(keys)], ".")
 
 	if v == n.loopVariable {
-		return n.context.Resolve(n.variable)
+		if lookupVariable == "" {
+			return string(n.variable.value)
+		}
+		return n.variable.value.Resolve(lookupVariable)
 	} else {
 		return n.node.Render(context)
 	}
@@ -170,7 +174,7 @@ func (n ForLoopVariableNode) Render(context *Context) string {
 
 type ForLoopVariable struct {
 	dataType string
-	value    []byte
+	value    ContextData
 }
 
 type ForLoopContext struct {
