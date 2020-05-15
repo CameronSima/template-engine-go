@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -11,16 +10,13 @@ type Parser struct {
 	context   *Context
 }
 
-func (p *Parser) Parse(parseUntil []string, start int, end int) []Node {
-	shouldSkip := false
+func (p *Parser) Parse(parseUntil []string) []Node {
 	nodes := make([]Node, 0)
 
-	for i, token := range p.tokens[start:end] {
-		shouldSkip = p.skipUntil != 0 && i < p.skipUntil
+	for p.tokens.IsEmpty == false {
+		token, _ := p.tokens.NextToken()
 
-		if shouldSkip {
-			continue
-		}
+		// shouldSkip = p.skipUntil != 0 && i < p.skipUntil
 
 		switch token.tokenType {
 		case TOKEN_VAR:
@@ -35,33 +31,27 @@ func (p *Parser) Parse(parseUntil []string, start int, end int) []Node {
 			bits := strings.Split(token.content, " ")
 			command := bits[0]
 
-			fmt.Println("BLOCK NODE")
-			fmt.Println(bits)
-			fmt.Println(command)
-			fmt.Println(parseUntil)
-			fmt.Println(p.skipUntil)
-
 			if Contains(parseUntil, command) {
-				p.skipUntil = start + i
+				p.tokens.PrependToken(token)
 				return nodes
 			}
-			node := p.GetBlockScopedNode(token, command, i)
+			node := p.GetBlockScopedNode(token, command)
 			nodes = append(nodes, node)
 		}
 	}
 	return nodes
 }
 
-func (p *Parser) GetBlockScopedNode(token Token, command string, currentLine int) Node {
+func (p *Parser) GetBlockScopedNode(token Token, command string) Node {
 	var node Node
 
 	switch command {
 	case "block":
-		nodeList := p.Parse([]string{"endblock"}, currentLine+1, len(p.tokens))
+		nodeList := p.Parse([]string{"endblock"})
 		node = NewBlockNode(token, nodeList, p.context)
 
 	case "for":
-		nodeList := p.Parse([]string{"endfor"}, currentLine+1, len(p.tokens))
+		nodeList := p.Parse([]string{"endfor"})
 		node = NewForNode(token, nodeList, p.context)
 
 	case "extends":

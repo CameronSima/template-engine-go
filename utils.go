@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 func RenderNodeList(nodeList []Node, context Context) string {
@@ -43,16 +45,23 @@ func Contains(l []string, s string) bool {
 }
 
 type TokenStack struct {
-	lock sync.Mutex // may want to add threading later
-	tokens []Token
+	lock    sync.Mutex // may want to add threading later
+	tokens  []Token
+	IsEmpty bool
 }
 
-func NewTokenStack(tokens []Token) {
-	return {sync.Mutex{}, sort.Reverse(tokens)}
+func NewTokenStack(tokens []Token) TokenStack {
+	s := TokenStack{
+		sync.Mutex{},
+		tokens,
+		len(tokens) < 0,
+	}
+	s.reverse()
+	return s
 }
 
 func (s *TokenStack) NextToken() (Token, error) {
-	return s.tokens.pop()
+	return s.pop()
 }
 
 func (s *TokenStack) PrependToken(token Token) {
@@ -64,9 +73,12 @@ func (s *TokenStack) pop() (Token, error) {
 	defer s.lock.Unlock()
 
 	l := len(s.tokens)
+	if l == 1 {
+		s.IsEmpty = true
+	}
 	if l == 0 {
 		return Token{0, "", 0}, errors.New("Stack is empty")
-	} 
+	}
 
 	result := s.tokens[l-1]
 	s.tokens = s.tokens[:l-1]
@@ -77,4 +89,10 @@ func (s *TokenStack) push(t Token) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.tokens = append(s.tokens, t)
+}
+
+func (s *TokenStack) reverse() {
+	for i, j := 0, len(s.tokens)-1; i < j; i, j = i+1, j-1 {
+		s.tokens[i], s.tokens[j] = s.tokens[j], s.tokens[i]
+	}
 }

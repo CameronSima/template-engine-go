@@ -20,7 +20,7 @@ func TestBlockNode(t *testing.T) {
 
 	c := NewContext(testContext)
 	parser := NewParser(testSource, &c)
-	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens))
+	nodes := parser.Parse(make([]string, 0))
 	forNode := nodes[1].(ForNode)
 	strippedResult := strings.Replace(forNode.Render(c), "\n", "", -1)
 	strippedResult = strings.Replace(strippedResult, " ", "", -1)
@@ -35,7 +35,7 @@ func TestNestedBlockNode(t *testing.T) {
 		<p>{{ n.name }}</p>
 		<p>{{ n.email }}</p>
 
-		{% for num in names.l %}
+		{% for num in n.l %}
 			<p>{{ num }}</p>
 		{% endfor %}
 
@@ -43,7 +43,12 @@ func TestNestedBlockNode(t *testing.T) {
 
 	c := NewContext(testContext)
 	parser := NewParser(testSource, &c)
-	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens))
-	forNode := nodes[1].(ForNode)
-	fmt.Println(forNode.Render(c))
+	nodes := parser.Parse(make([]string, 0))
+	fmt.Println(RenderNodeList(nodes, c))
+
+	// for _, node := range nodes {
+	// 	fmt.Println("NODE")
+	// 	fmt.Println(node)
+	// }
+
 }

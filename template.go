@@ -8,7 +8,7 @@ type Template struct {
 
 func (t Template) Render() string {
 
-	nodes := t.parser.Parse(make([]string, 0), 0, len(t.parser.tokens))
+	nodes := t.parser.Parse(make([]string, 0))
 
 	// fmt.Println("Context")
 	// fmt.Println(t.context.render_context)

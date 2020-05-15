@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -8,11 +9,13 @@ import (
 
 type Node interface {
 	Render(context Context) string
+	String() string
 }
 
 type BlankNode struct{}
 
 func (n BlankNode) Render(context Context) string { return "" }
+func (n BlankNode) String() string                { return "Type: BlankNode" }
 
 type VariableNode struct {
 	token Token
@@ -22,6 +25,10 @@ func (n VariableNode) Render(context Context) string {
 	variable := strings.Replace(n.token.content, " ", "", -1)
 	result, _ := context.data.Resolve(variable)
 	return result
+}
+
+func (n VariableNode) String() string {
+	return fmt.Sprintf("Type: VariableNode, Token: %v", n.token)
 }
 
 type TextNode struct {
@@ -34,7 +41,10 @@ func (n TextNode) Render(context Context) string {
 		return stripped
 	}
 	return n.token.content
+}
 
+func (n TextNode) String() string {
+	return fmt.Sprintf("Type: TextNode, Token: %v", n.token)
 }
 
 // ------------- Block-typed nodes ---------------
@@ -76,13 +86,13 @@ func (n BlockNode) Render(context Context) string {
 	return result
 }
 
+func (n BlockNode) String() string {
+	return fmt.Sprintf("Type: BlockNode, Token: %v, Children: %v", n.token, n.nodes)
+}
+
 type ExtendsNode struct {
 	token Token
 	nodes []Node
-}
-
-func (n ExtendsNode) Render(context Context) string {
-	return RenderNodeList(n.nodes, context)
 }
 
 func NewExtendsNode(token Token, context *Context) ExtendsNode {
@@ -90,8 +100,16 @@ func NewExtendsNode(token Token, context *Context) ExtendsNode {
 	parameter := bits[1]
 	templateSource := ReadTemplate(parameter)
 	parser := NewParser(templateSource, context)
-	nodes := parser.Parse(make([]string, 0), 0, len(parser.tokens))
+	nodes := parser.Parse(make([]string, 0))
 	return ExtendsNode{token, nodes}
+}
+
+func (n ExtendsNode) Render(context Context) string {
+	return RenderNodeList(n.nodes, context)
+}
+
+func (n ExtendsNode) String() string {
+	return fmt.Sprintf("Type: ExtendsNode, Token: %v, Children: %v", n.token, n.nodes)
 }
 
 type ForNode struct {
@@ -99,6 +117,7 @@ type ForNode struct {
 	nodes         []Node
 	loopVariable  string
 	loopArrayName string
+	parent        Node
 }
 
 func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
@@ -110,18 +129,8 @@ func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
 		parsedNodes,
 		loopVariable,
 		loopArrayName,
+		BlankNode{},
 	}
-}
-
-func (n ForNode) GetForLoopData(context Context) []ForLoopVariable {
-	keys := strings.Split(n.loopArrayName, ".")
-	values := make([]ForLoopVariable, 0)
-	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-		variable := ForLoopVariable{string(dataType), value}
-		values = append(values, variable)
-
-	}, keys...)
-	return values
 }
 
 func (n ForNode) Render(context Context) string {
@@ -142,6 +151,18 @@ func (n ForNode) Render(context Context) string {
 					variable,
 					loopContext,
 				}
+			case ForNode:
+				fmt.Println("FOR NODE FOUND IN CHILDREN")
+				node = childNode
+				fNode := childNode.(ForNode)
+				// fmt.Println(fNode.loopVariable)
+				// fmt.Println(fNode.loopArrayName)
+				// fmt.Println(fNode.nodes)
+				fmt.Println(fNode.Render(context))
+				fmt.Println("***")
+				fNode.parent = n
+				node = fNode
+
 			default:
 				node = childNode
 			}
@@ -150,6 +171,21 @@ func (n ForNode) Render(context Context) string {
 	}
 
 	return rendered.String()
+}
+
+func (n ForNode) String() string {
+	return fmt.Sprintf("Type: ForNode, Token: %v, Children: %v", n.token, n.nodes)
+}
+
+func (n ForNode) GetForLoopData(context Context) []ForLoopVariable {
+	keys := strings.Split(n.loopArrayName, ".")
+	values := make([]ForLoopVariable, 0)
+	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		variable := ForLoopVariable{string(dataType), value}
+		values = append(values, variable)
+
+	}, keys...)
+	return values
 }
 
 type ForLoopVariableNode struct {
@@ -187,6 +223,11 @@ func (n ForLoopVariableNode) Render(context Context) string {
 	}
 
 	return result
+}
+
+func (n ForLoopVariableNode) String() string {
+	return fmt.Sprintf("Type: ForLoopVariableNode, Variable: %v, InnerNode: %v", n.variable, n.node)
+
 }
 
 type ForLoopVariable struct {
