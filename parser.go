@@ -1,11 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 )
 
 type Parser struct {
-	tokens    []Token
+	tokens    TokenStack
 	skipUntil int
 	context   *Context
 }
@@ -33,6 +34,12 @@ func (p *Parser) Parse(parseUntil []string, start int, end int) []Node {
 		case TOKEN_BLOCK:
 			bits := strings.Split(token.content, " ")
 			command := bits[0]
+
+			fmt.Println("BLOCK NODE")
+			fmt.Println(bits)
+			fmt.Println(command)
+			fmt.Println(parseUntil)
+			fmt.Println(p.skipUntil)
 
 			if Contains(parseUntil, command) {
 				p.skipUntil = start + i
@@ -67,5 +74,5 @@ func (p *Parser) GetBlockScopedNode(token Token, command string, currentLine int
 
 func NewParser(source string, context *Context) Parser {
 	tokens := NewLexer(source).Tokenize()
-	return Parser{tokens, 0, context}
+	return Parser{NewTokenStack(tokens), 0, context}
 }

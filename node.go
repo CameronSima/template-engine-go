@@ -20,7 +20,8 @@ type VariableNode struct {
 
 func (n VariableNode) Render(context Context) string {
 	variable := strings.Replace(n.token.content, " ", "", -1)
-	return context.data.Resolve(variable)
+	result, _ := context.data.Resolve(variable)
+	return result
 }
 
 type TextNode struct {
@@ -129,17 +130,17 @@ func (n ForNode) Render(context Context) string {
 	l := len(variables)
 
 	for i, variable := range variables {
-
+		loopContext := NewForLoopContext(i, i-l, i == 0, i == l, n, n.loopVariable)
 		var node Node
+
 		for _, childNode := range n.nodes {
+
 			switch childNode.(type) {
 			case VariableNode:
-				loopContext := NewForLoopContext(i, i-l, i == 0, i == l, n, n.loopVariable)
-				context.AddToContextData(loopContext, "forloop")
 				node = ForLoopVariableNode{
 					childNode.(VariableNode),
 					variable,
-					n.loopVariable,
+					loopContext,
 				}
 			default:
 				node = childNode
@@ -152,24 +153,40 @@ func (n ForNode) Render(context Context) string {
 }
 
 type ForLoopVariableNode struct {
-	node         VariableNode
-	variable     ForLoopVariable
-	loopVariable string
+	node        VariableNode
+	variable    ForLoopVariable
+	loopContext ForLoopContext
 }
 
 func (n ForLoopVariableNode) Render(context Context) string {
 	keys := strings.Split(n.node.token.content, ".")
-	v := keys[0]
+	firstKey := keys[0]
+	context.AddToContextData(n.loopContext, "forloop")
+
+	var result string
 	lookupVariable := strings.Join(keys[1:len(keys)], ".")
 
-	if v == n.loopVariable {
-		if lookupVariable == "" {
-			return string(n.variable.value)
+	// basic key look up, ('name') or forloop, vs object lookup ('person.name')
+	if lookupVariable == "" {
+		// try from variable context
+		if r, err := n.variable.value.Resolve(firstKey); err == nil {
+			result = r
+
+			// try from forloop context
+		} else if r, err := context.data.Resolve("forloop." + firstKey); err == nil {
+			result = r
+
+		} else {
+			// not a for loop node, render variable node normally
+			result = n.node.Render(context)
 		}
-		return n.variable.value.Resolve(lookupVariable)
 	} else {
-		return n.node.Render(context)
+		// object lookup in variable context
+		r, _ := n.variable.value.Resolve(lookupVariable)
+		result = r
 	}
+
+	return result
 }
 
 type ForLoopVariable struct {
@@ -178,14 +195,14 @@ type ForLoopVariable struct {
 }
 
 type ForLoopContext struct {
-	counter      int
-	counter0     int
-	revcoounter  int
-	revcounter0  int
-	first        bool
-	last         bool
-	parent       ForNode
-	loopVariable string
+	Counter      int     `json:"counter"`
+	Counter0     int     `json:"counter0"`
+	Revcounter   int     `json:"revcounter"`
+	Revcounter0  int     `json:"revcounter0"`
+	First        bool    `json:"first"`
+	Last         bool    `json:"last"`
+	Parent       ForNode `json:"parent"`
+	LoopVariable string  `json:"loopVariable"`
 }
 
 func NewForLoopContext(counter0 int, revcounter0 int, first bool, last bool, parent ForNode, loopVariable string) ForLoopContext {

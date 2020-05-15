@@ -20,7 +20,11 @@ func (c *Context) AddRenderContext(key string, node Node) {
 }
 
 func (c *Context) AddToContextData(d interface{}, key string) {
-	data, _ := json.Marshal(d)
+	data, err := json.Marshal(d)
+
+	if err != nil {
+		fmt.Println("ERROR MARSHALLING")
+	}
 
 	value, err := jsonparser.Set(c.data, data, key)
 	if err != nil {
@@ -36,7 +40,7 @@ func (c Context) GetRenderContext(key string) (Node, bool) {
 	return BlankNode{}, false
 }
 
-func (c ContextData) Resolve(variable string) string {
+func (c ContextData) Resolve(variable string) (string, error) {
 	keys := strings.Split(variable, ".")
 	byteArr, _, _, err := jsonparser.Get(c, keys...)
 
@@ -45,9 +49,10 @@ func (c ContextData) Resolve(variable string) string {
 		fmt.Println("Context data: ")
 		fmt.Println(string(c))
 		fmt.Println(err)
+		return "", err
 	}
 	// TODO: use t (type) to return typed variable
-	return string(byteArr)
+	return string(byteArr), err
 }
 
 // func (c Context) ResolveArray(variable string) []string {
