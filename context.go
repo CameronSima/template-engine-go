@@ -20,8 +20,16 @@ func (c *Context) AddRenderContext(key string, node Node) {
 }
 
 func (c *Context) AddToContextData(d interface{}, key string) {
-	data, err := json.Marshal(d)
 
+	var data []byte
+	var err error
+	switch d.(type) {
+	case ContextData:
+		data = d.(ContextData)
+	default:
+		data, err = json.Marshal(d)
+	}
+	
 	if err != nil {
 		fmt.Println("ERROR MARSHALLING")
 	}

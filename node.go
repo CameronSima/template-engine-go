@@ -117,6 +117,7 @@ type ForNode struct {
 	nodes         []Node
 	loopVariable  string
 	loopArrayName string
+	loopContext ForLoopContext
 	parent        Node
 }
 
@@ -129,39 +130,31 @@ func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
 		parsedNodes,
 		loopVariable,
 		loopArrayName,
+		NewForLoopContext(-1, -1, false, false, "", make([]byte, 0)),
 		BlankNode{},
 	}
 }
 
 func (n ForNode) Render(context Context) string {
 	var rendered strings.Builder
-	variables := n.GetForLoopData(context)
+	variables := n.GetForLoopData(context.data)	
 	l := len(variables)
 
 	for i, variable := range variables {
-		loopContext := NewForLoopContext(i, i-l, i == 0, i == l, n, n.loopVariable)
-		var node Node
+		n.loopContext = NewForLoopContext(i, i-l, i == 0, i == l, n.loopVariable, variable.value)
+		context.AddToContextData(variable.value, n.loopVariable)
 
+		var node Node
 		for _, childNode := range n.nodes {
 
 			switch childNode.(type) {
+			// wrap variable node with loop context
 			case VariableNode:
 				node = ForLoopVariableNode{
 					childNode.(VariableNode),
 					variable,
-					loopContext,
+					n,
 				}
-			case ForNode:
-				fmt.Println("FOR NODE FOUND IN CHILDREN")
-				node = childNode
-				fNode := childNode.(ForNode)
-				// fmt.Println(fNode.loopVariable)
-				// fmt.Println(fNode.loopArrayName)
-				// fmt.Println(fNode.nodes)
-				fmt.Println(fNode.Render(context))
-				fmt.Println("***")
-				fNode.parent = n
-				node = fNode
 
 			default:
 				node = childNode
@@ -169,35 +162,51 @@ func (n ForNode) Render(context Context) string {
 			rendered.WriteString(node.Render(context))
 		}
 	}
-
 	return rendered.String()
 }
 
 func (n ForNode) String() string {
-	return fmt.Sprintf("Type: ForNode, Token: %v, Children: %v", n.token, n.nodes)
+	return fmt.Sprintf("Type: ForNode\n Token: %v\n Parent: %v\n Children: %v\n", n.token, n.parent, n.nodes)
 }
 
-func (n ForNode) GetForLoopData(context Context) []ForLoopVariable {
+func (n ForNode) GetForLoopData(data ContextData) []ForLoopVariable {
 	keys := strings.Split(n.loopArrayName, ".")
 	values := make([]ForLoopVariable, 0)
-	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+
+
+	fmt.Println("GETTING FOR LOOP DATA CONTEXT:")
+	fmt.Println(string(data))
+	fmt.Println("GETTING FOR LOOP DATA KEYS:")
+	fmt.Println(keys)
+	jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		variable := ForLoopVariable{string(dataType), value}
 		values = append(values, variable)
 
+		fmt.Println("GET FOR LOOP DATA VALUE:")
+		fmt.Println(value)
+
+		fmt.Println("GET FOR LOOP DATA ERROR:")
+		fmt.Println(err)
+
 	}, keys...)
+
+	fmt.Println("FOR LOOP DATA VALUES:")
+	fmt.Println(values)
 	return values
 }
 
 type ForLoopVariableNode struct {
 	node        VariableNode
 	variable    ForLoopVariable
-	loopContext ForLoopContext
+	forLoop ForNode
 }
 
 func (n ForLoopVariableNode) Render(context Context) string {
 	keys := strings.Split(n.node.token.content, ".")
 	firstKey := keys[0]
-	context.AddToContextData(n.loopContext, "forloop")
+	context.AddToContextData(n.forLoop.loopContext, "forloop")
+	
+	//if n.loopContext
 
 	var result string
 	lookupVariable := strings.Join(keys[1:len(keys)], ".")
@@ -211,6 +220,10 @@ func (n ForLoopVariableNode) Render(context Context) string {
 			// try from forloop context
 		} else if r, err := context.data.Resolve("forloop." + firstKey); err == nil {
 			result = r
+
+		} else if r, err := context.data.Resolve(firstKey); err == nil {
+				result = r
+	
 
 		} else {
 			// not a for loop node, render variable node normally
@@ -242,11 +255,12 @@ type ForLoopContext struct {
 	Revcounter0  int     `json:"revcounter0"`
 	First        bool    `json:"first"`
 	Last         bool    `json:"last"`
-	Parent       ForNode `json:"parent"`
 	LoopVariable string  `json:"loopVariable"`
+	Data ContextData `json:"data"`
+	//CurrentVariable ForLoopVariable `json:"currentVariable"`
 }
 
-func NewForLoopContext(counter0 int, revcounter0 int, first bool, last bool, parent ForNode, loopVariable string) ForLoopContext {
+func NewForLoopContext(counter0 int, revcounter0 int, first bool, last bool, loopVariable string, data []byte) ForLoopContext {
 	return ForLoopContext{
 		counter0 - 1,
 		counter0,
@@ -254,7 +268,7 @@ func NewForLoopContext(counter0 int, revcounter0 int, first bool, last bool, par
 		revcounter0,
 		first,
 		last,
-		parent,
 		loopVariable,
+		data,
 	}
 }
