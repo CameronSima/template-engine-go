@@ -24,7 +24,7 @@ func CreateToken(tokenStr string, isTag bool, lineNumber int) Token {
 	if isTag {
 		tokenStr = strings.TrimSpace(tokenStr)
 		openingTag := tokenStr[0:2]
-		content := tokenStr[2 : len(tokenStr)-2]
+		content := tokenStr[2:len(tokenStr)-2]
 		content = strings.TrimSpace(content)
 
 		switch openingTag {
@@ -36,7 +36,6 @@ func CreateToken(tokenStr string, isTag bool, lineNumber int) Token {
 
 		case COMMENT_TAG_START:
 			token = Token{TOKEN_COMMENT, "", lineNumber}
-
 		}
 	} else {
 		token = Token{TOKEN_TEXT, tokenStr, lineNumber}

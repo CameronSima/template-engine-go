@@ -13,13 +13,7 @@ func RenderNodeList(nodeList []Node, context Context) string {
 	var rendered strings.Builder
 
 	for _, node := range nodeList {
-
-		if node == nil {
-			rendered.WriteString("NIL NODE")
-		} else {
-			rendered.WriteString(node.Render(context))
-		}
-
+		rendered.WriteString(node.Render(context))	
 	}
 	return rendered.String()
 }
@@ -37,7 +31,7 @@ func ReadTemplate(templateName string) string {
 
 func Contains(l []string, s string) bool {
 	for _, v := range l {
-		if v == strings.Replace(s, " ", "", -1) {
+		if v == strings.TrimSpace(s) {
 			return true
 		}
 	}
@@ -45,14 +39,14 @@ func Contains(l []string, s string) bool {
 }
 
 type TokenStack struct {
-	lock    sync.Mutex // may want to add threading later
+	lock    *sync.Mutex // may want to add threading later
 	tokens  []Token
 	IsEmpty bool
 }
 
 func NewTokenStack(tokens []Token) TokenStack {
 	s := TokenStack{
-		sync.Mutex{},
+		&sync.Mutex{},
 		tokens,
 		len(tokens) < 0,
 	}
@@ -75,8 +69,7 @@ func (s *TokenStack) pop() (Token, error) {
 	l := len(s.tokens)
 	if l == 1 {
 		s.IsEmpty = true
-	}
-	if l == 0 {
+	} else if l == 0 {
 		return Token{0, "", 0}, errors.New("Stack is empty")
 	}
 

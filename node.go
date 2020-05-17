@@ -37,7 +37,7 @@ type TextNode struct {
 
 func (n TextNode) Render(context Context) string {
 	stripped := strings.Replace(n.token.content, " ", "", -1)
-	if stripped == "" {
+	if stripped == "" || stripped == "\n" {
 		return stripped
 	}
 	return n.token.content
@@ -99,7 +99,7 @@ func NewExtendsNode(token Token, context *Context) ExtendsNode {
 	bits := strings.Split(token.content, " ")
 	parameter := bits[1]
 	templateSource := ReadTemplate(parameter)
-	//parser := NewParser(templateSource, context)
+	parser := NewParser(templateSource, context)
 	nodes := parser.Parse(make([]string, 0))
 	return ExtendsNode{token, nodes}
 }
