@@ -16,8 +16,6 @@ func (p *Parser) Parse(parseUntil []string) []Node {
 	for p.tokens.IsEmpty == false {
 		token, _ := p.tokens.NextToken()
 
-		// shouldSkip = p.skipUntil != 0 && i < p.skipUntil
-
 		switch token.tokenType {
 		case TOKEN_VAR:
 			node := VariableNode{token}

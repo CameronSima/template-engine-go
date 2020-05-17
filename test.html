@@ -1,14 +1,12 @@
 {% extends 'test_base.html' %}
 {% block content %}
-<div>
-	<span>hi-1</span>
-	<div>{{ username }}</div> 
+	<div>
+		<span>hi-1</span>
+		<div>{{ username }}</div> 
 		<p>hi-2</p>
-</div>
-	{% endblock %}
+	</div>
+{% endblock %}
 
-	<div>hi-3</div>
-
-	{% block footer %}
+{% block footer %}
 	<div>footer</div>
-	{% endblock %}
+{% endblock %}

@@ -1,9 +1,13 @@
+<div class="main">
+    <div>
+        <h1>Main title</h1>
+    {% block content %}{% endblock %}
 
-<div>
-    <h1>Main title</h1>
-{% block content %}{% endblock %}
+        <p>some text</p>
+        <p>h1-3</p>
+    </div>
 
-    <p>some text</p>
+    {% block footer %}{% endblock %}
+    
+    <span class="below footer" />
 </div>
-
-{% block footer %}{% endblock %}

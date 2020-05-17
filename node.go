@@ -99,7 +99,7 @@ func NewExtendsNode(token Token, context *Context) ExtendsNode {
 	bits := strings.Split(token.content, " ")
 	parameter := bits[1]
 	templateSource := ReadTemplate(parameter)
-	parser := NewParser(templateSource, context)
+	//parser := NewParser(templateSource, context)
 	nodes := parser.Parse(make([]string, 0))
 	return ExtendsNode{token, nodes}
 }
@@ -173,25 +173,11 @@ func (n ForNode) GetForLoopData(data ContextData) []ForLoopVariable {
 	keys := strings.Split(n.loopArrayName, ".")
 	values := make([]ForLoopVariable, 0)
 
-
-	fmt.Println("GETTING FOR LOOP DATA CONTEXT:")
-	fmt.Println(string(data))
-	fmt.Println("GETTING FOR LOOP DATA KEYS:")
-	fmt.Println(keys)
 	jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		variable := ForLoopVariable{string(dataType), value}
 		values = append(values, variable)
-
-		fmt.Println("GET FOR LOOP DATA VALUE:")
-		fmt.Println(value)
-
-		fmt.Println("GET FOR LOOP DATA ERROR:")
-		fmt.Println(err)
-
 	}, keys...)
 
-	fmt.Println("FOR LOOP DATA VALUES:")
-	fmt.Println(values)
 	return values
 }
 
@@ -206,23 +192,21 @@ func (n ForLoopVariableNode) Render(context Context) string {
 	firstKey := keys[0]
 	context.AddToContextData(n.forLoop.loopContext, "forloop")
 	
-	//if n.loopContext
-
 	var result string
 	lookupVariable := strings.Join(keys[1:len(keys)], ".")
 
 	// basic key look up, ('name') or forloop, vs object lookup ('person.name')
 	if lookupVariable == "" {
-		// try from variable context
-		if r, err := n.variable.value.Resolve(firstKey); err == nil {
-			result = r
 
-			// try from forloop context
+		// try from context
+		if r, err := context.data.Resolve(firstKey); err == nil {
+			result = r
+		// try from forloop context
 		} else if r, err := context.data.Resolve("forloop." + firstKey); err == nil {
 			result = r
 
 		} else if r, err := context.data.Resolve(firstKey); err == nil {
-				result = r
+			result = r
 	
 
 		} else {
