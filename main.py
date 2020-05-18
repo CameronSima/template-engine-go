@@ -1,32 +1,74 @@
 from ctypes import *
+import os
 import json
+from django.template.engine import Engine
+from django.template.backends.base import BaseEngine
+from django.urls import get_resolver
 
 
-lib = cdll.LoadLibrary("./phantom.so")
+dirname = os.path.dirname(__file__)
+filename = os.path.join(dirname, "./phantom.so")
+lib = cdll.LoadLibrary(filename)
 lib.render.restype = c_char_p
 
 
-class Phantom:
+class Phantom(BaseEngine):
+    app_dirname = 'templates'
+
+    def __init__(self, params):
+        print("\n\nINITTING PHANTOM>>>\n\n")
+        pass
+
     def get_template(self, template_name):
-        return Template(template_name)
+        return Template(self.app_dirname + "/" + template_name)
 
 
 class Template:
     def __init__(self, template_name):
+        print("***Initting template: \n\n")
         self.template_name = template_name
 
     def render(self, context, request):
-        context = json.dumps({ **request, **context })
+        print("REQUEST")
+        print(request.__dict__)
+
+        get_urls()
+
+        #context = json.dumps({ **request.user, **context })
+        #context = json.dumps(context)
+        context = prepare_context(request, context)
+        print("CONTEXT")
+        print(context)
+
         return lib.render(
             self.template_name.encode('utf-8'),
             context.encode('utf-8')
         )
 
+def prepare_context(request, context):
+    result = {
+       # 'user': request.user.__dict__,
+        'urls': get_urls(),
+        'cookies': request.COOKIES,
+        'http_host': request.get_host()
+    }
+    return json.dumps({**result, **context})
 
-c = {'username': 'cameron'}
-r = {'GET': {'param': 'hi'}}
-p = Phantom()
-t = p.get_template('test.html')
-t.render(c, r)
+
+def get_urls():
+    urls = []
+    for u in get_resolver().url_patterns:
+        urls.append({
+            'name': u.name,
+            'pattern': u.pattern._route,
+            #'pattern_regex': str(u.pattern.regex)
+        })
+    return urls
+
+# c = {'username': 'cameron'}
+# r = {'GET': {'param': 'hi'}}
+# p = Phantom()
+# t = p.get_template('test.html')
+# t.render(c, r)
 
 

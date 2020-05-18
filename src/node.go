@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -117,7 +118,7 @@ type ForNode struct {
 	nodes         []Node
 	loopVariable  string
 	loopArrayName string
-	loopContext ForLoopContext
+	loopContext   ForLoopContext
 	parent        Node
 }
 
@@ -137,7 +138,7 @@ func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
 
 func (n ForNode) Render(context Context) string {
 	var rendered strings.Builder
-	variables := n.GetForLoopData(context.data)	
+	variables := n.GetForLoopData(context.data)
 	l := len(variables)
 
 	for i, variable := range variables {
@@ -182,16 +183,16 @@ func (n ForNode) GetForLoopData(data ContextData) []ForLoopVariable {
 }
 
 type ForLoopVariableNode struct {
-	node        VariableNode
-	variable    ForLoopVariable
-	forLoop ForNode
+	node     VariableNode
+	variable ForLoopVariable
+	forLoop  ForNode
 }
 
 func (n ForLoopVariableNode) Render(context Context) string {
 	keys := strings.Split(n.node.token.content, ".")
 	firstKey := keys[0]
 	context.AddToContextData(n.forLoop.loopContext, "forloop")
-	
+
 	var result string
 	lookupVariable := strings.Join(keys[1:len(keys)], ".")
 
@@ -201,13 +202,12 @@ func (n ForLoopVariableNode) Render(context Context) string {
 		// try from context
 		if r, err := context.data.Resolve(firstKey); err == nil {
 			result = r
-		// try from forloop context
+			// try from forloop context
 		} else if r, err := context.data.Resolve("forloop." + firstKey); err == nil {
 			result = r
 
 		} else if r, err := context.data.Resolve(firstKey); err == nil {
 			result = r
-	
 
 		} else {
 			// not a for loop node, render variable node normally
@@ -233,14 +233,14 @@ type ForLoopVariable struct {
 }
 
 type ForLoopContext struct {
-	Counter      int     `json:"counter"`
-	Counter0     int     `json:"counter0"`
-	Revcounter   int     `json:"revcounter"`
-	Revcounter0  int     `json:"revcounter0"`
-	First        bool    `json:"first"`
-	Last         bool    `json:"last"`
-	LoopVariable string  `json:"loopVariable"`
-	Data ContextData `json:"data"`
+	Counter      int         `json:"counter"`
+	Counter0     int         `json:"counter0"`
+	Revcounter   int         `json:"revcounter"`
+	Revcounter0  int         `json:"revcounter0"`
+	First        bool        `json:"first"`
+	Last         bool        `json:"last"`
+	LoopVariable string      `json:"loopVariable"`
+	Data         ContextData `json:"data"`
 	//CurrentVariable ForLoopVariable `json:"currentVariable"`
 }
 
@@ -257,8 +257,37 @@ func NewForLoopContext(counter0 int, revcounter0 int, first bool, last bool, loo
 	}
 }
 
-// type UrlNode struct {
-// 	token Token
-// 	viewName string
+type UrlNode struct {
+	token Token
+}
 
-// }
+func (n UrlNode) Render(context Context) string {
+	var pattern string
+	bits := strings.Split(n.token.content, " ")
+
+	http_host, _ := context.data.Resolve("http_host")
+
+	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		var urlDef UrlDefinition
+		err = json.Unmarshal(value, &urlDef)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Println(urlDef)
+
+		if urlDef.Name == bits[1] {
+			pattern = urlDef.Pattern
+		}
+	}, "urls")
+	return fmt.Sprintf("%s/%s", http_host, pattern)
+}
+
+func (n UrlNode) String() string {
+	return n.token.content
+}
+
+type UrlDefinition struct {
+	Name    string
+	Pattern string
+}

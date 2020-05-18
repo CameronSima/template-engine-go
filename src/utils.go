@@ -13,14 +13,14 @@ func RenderNodeList(nodeList []Node, context Context) string {
 	var rendered strings.Builder
 
 	for _, node := range nodeList {
-		rendered.WriteString(node.Render(context))	
+		rendered.WriteString(node.Render(context))
 	}
 	return rendered.String()
 }
 
 func ReadTemplate(templateName string) string {
 	templateName = strings.Trim(templateName, `"'`)
-	absPath, _ := filepath.Abs("src/" + templateName)
+	absPath, _ := filepath.Abs(templateName)
 	templateBytes, err := ioutil.ReadFile(absPath)
 
 	if err != nil {

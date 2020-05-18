@@ -55,15 +55,8 @@ func (l Lexer) Tokenize() []Token {
 		piece := l.template[beg:]
 		isTag := strings.Contains(piece, "{")
 		t := CreateToken(piece, isTag, lineNumber)
-
-		fmt.Println("END")
-		fmt.Println(t)
-
 		tokens = append(tokens, t)
 	}
-
-	fmt.Println("TOKENS:")
-	fmt.Println(tokens)
 	return tokens
 }
 

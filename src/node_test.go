@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,4 +56,19 @@ func TestNestedBlockNode(t *testing.T) {
 	assert.Equal(t, strings.Contains(result, "<p>3</p>"), true)
 	assert.Equal(t, strings.Contains(result, "<p>4</p>"), true)
 	assert.Equal(t, strings.Contains(result, "<p>5</p>"), true)
+}
+
+func TestUrlNode(t *testing.T) {
+	var testContext = `{"urls": [{"name": "home", "pattern": "/home"}], "http_host": "localhost:8000"}`
+	var testSource = `
+	<div>
+		<a href={% url "home" %} />
+	 </div>`
+
+	c := NewContext(testContext)
+	parser := NewParser(testSource, &c)
+	nodes := parser.Parse(make([]string, 0))
+
+	fmt.Println(RenderNodeList(nodes, c))
+
 }
