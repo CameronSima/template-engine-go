@@ -53,7 +53,7 @@ ROOT_URLCONF = 'test_app.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'template-engine-go.main.Phantom',
+        'BACKEND': 'template_engine_go.main.Phantom',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {

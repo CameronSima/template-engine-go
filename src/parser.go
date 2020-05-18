@@ -47,16 +47,17 @@ func (p *Parser) GetBlockScopedNode(token Token, command string) Node {
 	case "block":
 		nodeList := p.Parse([]string{"endblock"})
 		node = NewBlockNode(token, nodeList, p.context)
-
 	case "for":
 		nodeList := p.Parse([]string{"endfor"})
 		node = NewForNode(token, nodeList, p.context)
-
 	case "extends":
 		node = NewExtendsNode(token, p.context)
-
 	case "url":
 		node = UrlNode{token}
+	case "static":
+		node = StaticNode{token}
+	case "csrftoken":
+		node = CsrfNode{}
 	default:
 		node = BlankNode{}
 	}

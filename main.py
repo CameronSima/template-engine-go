@@ -16,7 +16,6 @@ class Phantom(BaseEngine):
     app_dirname = 'templates'
 
     def __init__(self, params):
-        print("\n\nINITTING PHANTOM>>>\n\n")
         pass
 
     def get_template(self, template_name):
@@ -25,20 +24,19 @@ class Phantom(BaseEngine):
 
 class Template:
     def __init__(self, template_name):
-        print("***Initting template: \n\n")
         self.template_name = template_name
 
     def render(self, context, request):
-        print("REQUEST")
-        print(request.__dict__)
 
-        get_urls()
+        print("\n\nSETTINGS\n\n")
+        from django.conf import settings
+        print(settings.STATIC_URL)
+        print(settings.__dict__)
 
         #context = json.dumps({ **request.user, **context })
         #context = json.dumps(context)
         context = prepare_context(request, context)
-        print("CONTEXT")
-        print(context)
+
 
         return lib.render(
             self.template_name.encode('utf-8'),
@@ -65,10 +63,5 @@ def get_urls():
         })
     return urls
 
-# c = {'username': 'cameron'}
-# r = {'GET': {'param': 'hi'}}
-# p = Phantom()
-# t = p.get_template('test.html')
-# t.render(c, r)
 
 

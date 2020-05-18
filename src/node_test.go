@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -12,7 +11,7 @@ func TestBlockNode(t *testing.T) {
 	var testContext = `{"names": [{"name": "johnny", "email": "jbone@gmail.com", "l": [1, 2, 3]}, {"name": "cameron", "email": "boner@gmail.com", "l": [4, 5]}}]}`
 	var testSource = `
 	{% for n in names %}
-		<p>is first? {{ first }}</p>
+		<p>is first? {{ forloop.first }}</p>
 		<p>{{ n.name }}</p>
 		<p>{{ n.email }}</p>
 
@@ -31,7 +30,7 @@ func TestNestedBlockNode(t *testing.T) {
 	var testContext = `{"names": [{"name": "johnny", "email": "jbone@gmail.com", "l": [1, 2, 3]}, {"name": "cameron", "email": "boner@gmail.com", "l": [4, 5]}}]}`
 	var testSource = `
 	{% for n in names %}
-		<p>is first? {{ first }}</p>
+		<p>is first? {{ forloop.first }}</p>
 		<p>{{ n.name }}</p>
 		<p>{{ n.email }}</p>
 
@@ -68,7 +67,36 @@ func TestUrlNode(t *testing.T) {
 	c := NewContext(testContext)
 	parser := NewParser(testSource, &c)
 	nodes := parser.Parse(make([]string, 0))
+	result := RenderNodeList(nodes, c)
 
-	fmt.Println(RenderNodeList(nodes, c))
+	assert.Equal(t, true, strings.Contains(result, `<a href="localhost:8000/home" />`))
+}
 
+func TestStaticNode(t *testing.T) {
+	var testContext = `{"urls": [{"name": "home", "pattern": "/home"}], "static_url": "/static/", "http_host": "localhost:8000"}`
+	var testSource = `
+	<div>
+		<a href={% static "images/hi.jpg" %} />
+	 </div>`
+
+	c := NewContext(testContext)
+	parser := NewParser(testSource, &c)
+	nodes := parser.Parse(make([]string, 0))
+	result := RenderNodeList(nodes, c)
+	assert.Equal(t, true, strings.Contains(result, `<a href="localhost:8000/static/images/hi.jpg" />`))
+}
+
+func TestCsrfNode(t *testing.T) {
+	var testContext = `{"urls": [{"name": "home", "pattern": "/home"}], "cookies": {"CSRF_TOKEN": "testToken"}`
+	var testSource = `
+	<div>
+		{% csrftoken %}
+	 </div>`
+
+	c := NewContext(testContext)
+	parser := NewParser(testSource, &c)
+	nodes := parser.Parse(make([]string, 0))
+	result := RenderNodeList(nodes, c)
+
+	assert.Equal(t, true, strings.Contains(result, `testToken`))
 }

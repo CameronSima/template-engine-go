@@ -202,12 +202,6 @@ func (n ForLoopVariableNode) Render(context Context) string {
 		// try from context
 		if r, err := context.data.Resolve(firstKey); err == nil {
 			result = r
-			// try from forloop context
-		} else if r, err := context.data.Resolve("forloop." + firstKey); err == nil {
-			result = r
-
-		} else if r, err := context.data.Resolve(firstKey); err == nil {
-			result = r
 
 		} else {
 			// not a for loop node, render variable node normally
@@ -215,8 +209,12 @@ func (n ForLoopVariableNode) Render(context Context) string {
 		}
 	} else {
 		// object lookup in variable context
-		r, _ := n.variable.value.Resolve(lookupVariable)
-		result = r
+		if r, err := n.variable.value.Resolve(lookupVariable); err == nil {
+			result = r
+		} else {
+			r, _ := context.data.Resolve(n.node.token.content)
+			result = r
+		}
 	}
 
 	return result
@@ -264,7 +262,7 @@ type UrlNode struct {
 func (n UrlNode) Render(context Context) string {
 	var pattern string
 	bits := strings.Split(n.token.content, " ")
-
+	viewName := strings.Trim(bits[1], `"'`)
 	http_host, _ := context.data.Resolve("http_host")
 
 	jsonparser.ArrayEach(context.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
@@ -276,11 +274,11 @@ func (n UrlNode) Render(context Context) string {
 
 		fmt.Println(urlDef)
 
-		if urlDef.Name == bits[1] {
+		if urlDef.Name == viewName {
 			pattern = urlDef.Pattern
 		}
 	}, "urls")
-	return fmt.Sprintf("%s/%s", http_host, pattern)
+	return fmt.Sprintf(`"%s%s"`, http_host, pattern)
 }
 
 func (n UrlNode) String() string {
@@ -290,4 +288,31 @@ func (n UrlNode) String() string {
 type UrlDefinition struct {
 	Name    string
 	Pattern string
+}
+
+type StaticNode struct {
+	token Token
+}
+
+func (n StaticNode) Render(context Context) string {
+	bits := strings.Split(n.token.content, " ")
+	url := strings.Trim(bits[1], `"'`)
+	http_host, _ := context.data.Resolve("http_host")
+	static_url, _ := context.data.Resolve("static_url")
+	return fmt.Sprintf(`"%s%s%s"`, http_host, static_url, url)
+}
+
+func (n StaticNode) String() string {
+	return "Type: StaticNode \n" + n.token.content
+}
+
+type CsrfNode struct{}
+
+func (n CsrfNode) Render(context Context) string {
+	csrfToken, _ := context.data.Resolve("cookies.CSRF_TOKEN")
+	return fmt.Sprintf(`<input type="hidden" name="csrfmiddlewaretoken" value="%s">`, csrfToken)
+}
+
+func (n CsrfNode) String() string {
+	return "Type: CsrfNode \n"
 }

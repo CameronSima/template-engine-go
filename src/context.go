@@ -29,7 +29,7 @@ func (c *Context) AddToContextData(d interface{}, key string) {
 	default:
 		data, err = json.Marshal(d)
 	}
-	
+
 	if err != nil {
 		fmt.Println("ERROR MARSHALLING")
 	}
@@ -53,10 +53,6 @@ func (c ContextData) Resolve(variable string) (string, error) {
 	byteArr, _, _, err := jsonparser.Get(c, keys...)
 
 	if err != nil {
-		fmt.Println("Error resolving variable: " + variable)
-		fmt.Println("Context data: ")
-		fmt.Println(string(c))
-		fmt.Println(err)
 		return "", err
 	}
 	// TODO: use t (type) to return typed variable
