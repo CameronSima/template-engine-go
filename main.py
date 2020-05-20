@@ -37,7 +37,6 @@ class Template:
         #context = json.dumps(context)
         context = prepare_context(request, context)
 
-
         return lib.render(
             self.template_name.encode('utf-8'),
             context.encode('utf-8')

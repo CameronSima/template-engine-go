@@ -114,19 +114,32 @@ func (n ExtendsNode) String() string {
 }
 
 type ForNode struct {
-	token         Token
-	nodes         []Node
-	loopVariable  string
-	loopArrayName string
-	loopContext   ForLoopContext
-	parent        Node
+	isKeyValuePair bool
+	token          Token
+	nodes          []Node
+	loopVariable   string
+	loopArrayName  string
+	loopContext    ForLoopContext
+	parent         Node
 }
 
 func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
+	var loopVariable string
+	var loopArrayName string
+	isKeyValuePair := false
 	bits := strings.Split(token.content, " ")
-	loopVariable := bits[1]
-	loopArrayName := bits[3]
+
+	if len(bits) == 5 {
+		isKeyValuePair = true
+		loopVariable = bits[1] + bits[2]
+		loopArrayName = bits[4]
+	} else {
+		loopVariable = bits[1]
+		loopArrayName = bits[3]
+	}
+
 	return ForNode{
+		isKeyValuePair,
 		token,
 		parsedNodes,
 		loopVariable,
@@ -166,21 +179,67 @@ func (n ForNode) Render(context Context) string {
 	return rendered.String()
 }
 
+// func (n ForNode) RenderKeyValueData(context Context) string {
+// 	var rendered strings.Builder
+// 	variables := n.GetForLoopKeyValueData(context.data)
+// 	l := len(variables)
+
+// 	for i, variable := range variables {
+// 		n.loopContext = NewForLoopContext(i, i-l, i == 0, i == l, n.loopVariable, variable.value)
+// 		k := variable[0]
+// 		v := variable[1]
+// 		context.AddToContextData(k.value, n.loopVariable)
+// 		context.AddToContextData(v.value, n.loopVariable)
+
+// 		var node Node
+// 		for _, childNode := range n.nodes {
+
+// 			switch childNode.(type) {
+// 			// wrap variable node with loop context
+// 			case VariableNode:
+// 				node = ForLoopVariableNode{
+// 					childNode.(VariableNode),
+// 					variable,
+// 					n,
+// 				}
+
+// 			default:
+// 				node = childNode
+// 			}
+// 			rendered.WriteString(node.Render(context))
+// 		}
+// 	}
+// 	return rendered.String()
+// }
+
 func (n ForNode) String() string {
 	return fmt.Sprintf("Type: ForNode\n Token: %v\n Parent: %v\n Children: %v\n", n.token, n.parent, n.nodes)
 }
 
 func (n ForNode) GetForLoopData(data ContextData) []ForLoopVariable {
-	keys := strings.Split(n.loopArrayName, ".")
-	values := make([]ForLoopVariable, 0)
+	lookupKeys := strings.Split(n.loopArrayName, ".")
+	results := make([]ForLoopVariable, 0)
 
 	jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		variable := ForLoopVariable{string(dataType), value}
-		values = append(values, variable)
-	}, keys...)
-
-	return values
+		results = append(results, variable)
+	}, lookupKeys...)
+	return results
 }
+
+// func (n ForNode) GetForLoopKeyValueData(data ContextData) [][]ForLoopVariable {
+// 	lookupKeys := strings.Split(n.loopArrayName, ".")
+// 	results := make([][]ForLoopVariable, 0)
+
+// 	jsonparser.ObjectEach(data, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+// 		fmt.Printf("Key: '%s'\n Value: '%s'\n Type: %s\n", string(key), string(value), dataType)
+// 		k := ForLoopVariable{string(dataType), key}
+// 		v := ForLoopVariable{string(dataType), value}
+// 		keyValPair := [][]ForLoopVariable{k, v}
+// 		results = append(results, keyValPair)
+// 	}, keys...)
+// 	return results
+// }
 
 type ForLoopVariableNode struct {
 	node     VariableNode

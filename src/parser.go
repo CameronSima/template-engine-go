@@ -52,6 +52,8 @@ func (p *Parser) GetBlockScopedNode(token Token, command string) Node {
 		node = NewForNode(token, nodeList, p.context)
 	case "extends":
 		node = NewExtendsNode(token, p.context)
+	case "include":
+		node = NewIncludeNode(token, p.context)
 	case "url":
 		node = UrlNode{token}
 	case "static":
