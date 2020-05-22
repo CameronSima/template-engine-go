@@ -61,7 +61,7 @@ func (p *Parser) GetBlockScopedNode(token Token, command string) Node {
 	case "csrftoken":
 		node = CsrfNode{}
 	default:
-		node = BlankNode{}
+		node = NewPythonNode(token, p.context)
 	}
 	return node
 }

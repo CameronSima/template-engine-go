@@ -268,12 +268,12 @@ func (n ForLoopVariableNode) Render(context Context) string {
 		}
 	} else {
 		// object lookup in variable context
-		if r, err := n.variable.value.Resolve(lookupVariable); err == nil {
-			result = r
-		} else {
-			r, _ := context.data.Resolve(n.node.token.content)
-			result = r
-		}
+		//	if r, err := n.variable.value.Resolve(lookupVariable); err == nil {
+		//		result = r
+		//	} else {
+		r, _ := context.data.Resolve(n.node.token.content)
+		result = r
+		//	}
 	}
 
 	return result

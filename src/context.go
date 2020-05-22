@@ -13,6 +13,21 @@ type ContextData []byte
 type Context struct {
 	data           ContextData
 	render_context map[string]Node
+	functionCalls  []PythonNode
+	pythonFuncs    map[string]int
+}
+
+func NewContext(source string) Context {
+	return Context{
+		[]byte(source),
+		make(map[string]Node),
+		make([]PythonNode, 0),
+		make(map[string]int),
+	}
+}
+
+func (c *Context) AddFunctionCall(n PythonNode) {
+	c.functionCalls = append(c.functionCalls, n)
 }
 
 func (c *Context) AddRenderContext(key string, node Node) {
@@ -59,19 +74,9 @@ func (c ContextData) Resolve(variable string) (string, error) {
 	return string(byteArr), err
 }
 
-// func (c Context) ResolveArray(variable string) []string {
-// 	values := make([]string, 0)
-// 	keys := strings.Split(variable, ".")
-
-// 	jsonparser.ArrayEach(c.data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-// 		fmt.Println(jsonparser.Get(value)
-// 	}, keys...)
-
-// }
-
-func NewContext(source string) Context {
-	return Context{
-		[]byte(source),
-		make(map[string]Node),
-	}
+func (c Context) HasLibrary(libName string) bool {
+	//_, hasLib := c.pythonFuncs[libName]
+	//return hasLib
+	_, err := c.data.Resolve(libName)
+	return err == nil
 }

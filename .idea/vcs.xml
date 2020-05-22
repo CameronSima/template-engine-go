@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/e2e/template_engine_test_app/env/Lib/site-packages/template_engine_go" vcs="Git" />
+  </component>
+</project>
