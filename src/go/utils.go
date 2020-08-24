@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-func RenderNodeList(nodeList []Node, context Context) string {
+func RenderNodeList(nodeList []Node, context *Context) string {
 	var rendered strings.Builder
 
 	for _, node := range nodeList {

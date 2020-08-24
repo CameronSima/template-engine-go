@@ -21,7 +21,7 @@ func TestForNode(t *testing.T) {
 	parser := NewParser(testSource, &c)
 	nodes := parser.Parse(make([]string, 0))
 	forNode := nodes[1].(ForNode)
-	strippedResult := strings.Replace(forNode.Render(c), "\n", "", -1)
+	strippedResult := strings.Replace(forNode.Render(&c), "\n", "", -1)
 	strippedResult = strings.Replace(strippedResult, " ", "", -1)
 	assert.Equal(
 		t,
@@ -63,7 +63,7 @@ func TestNestedBlockNode(t *testing.T) {
 	nodes := parser.Parse(make([]string, 0))
 	fNode := nodes[1].(ForNode)
 	nestedFNode := fNode.nodes[7].(ForNode)
-	result := RenderNodeList(nodes, c)
+	result := RenderNodeList(nodes, &c)
 
 	assert.Equal(t, nestedFNode.token.content, "for num in n.l")
 	assert.Equal(t, nestedFNode.loopVariable, "num")
@@ -85,7 +85,7 @@ func TestUrlNode(t *testing.T) {
 	c := NewContext(testContext)
 	parser := NewParser(testSource, &c)
 	nodes := parser.Parse(make([]string, 0))
-	result := RenderNodeList(nodes, c)
+	result := RenderNodeList(nodes, &c)
 
 	assert.Equal(t, true, strings.Contains(result, `<a href="localhost:8000/home" />`))
 }
@@ -100,7 +100,7 @@ func TestStaticNode(t *testing.T) {
 	c := NewContext(testContext)
 	parser := NewParser(testSource, &c)
 	nodes := parser.Parse(make([]string, 0))
-	result := RenderNodeList(nodes, c)
+	result := RenderNodeList(nodes, &c)
 	assert.Equal(t, true, strings.Contains(result, `<a href="localhost:8000/static/images/hi.jpg" />`))
 }
 
@@ -114,7 +114,7 @@ func TestCsrfNode(t *testing.T) {
 	c := NewContext(testContext)
 	parser := NewParser(testSource, &c)
 	nodes := parser.Parse(make([]string, 0))
-	result := RenderNodeList(nodes, c)
+	result := RenderNodeList(nodes, &c)
 
 	assert.Equal(t, true, strings.Contains(result, `testToken`))
 }

@@ -13,7 +13,7 @@ const (
 
 type Token struct {
 	tokenType int
-	content   string
+	Content   string `json:content`
 	//position   []int
 	lineNumber int
 }
@@ -24,7 +24,7 @@ func CreateToken(tokenStr string, isTag bool, lineNumber int) Token {
 	if isTag {
 		tokenStr = strings.TrimSpace(tokenStr)
 		openingTag := tokenStr[0:2]
-		content := tokenStr[2:len(tokenStr)-2]
+		content := tokenStr[2 : len(tokenStr)-2]
 		content = strings.TrimSpace(content)
 
 		switch openingTag {

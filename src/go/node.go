@@ -9,43 +9,44 @@ import (
 )
 
 type Node interface {
-	Render(context Context) string
+	Render(context *Context) string
 	String() string
 }
 
 type BlankNode struct{}
 
-func (n BlankNode) Render(context Context) string { return "" }
-func (n BlankNode) String() string                { return "Type: BlankNode" }
+func (n BlankNode) Render(context *Context) string { return "" }
+func (n BlankNode) String() string                 { return "Type: BlankNode" }
 
 type VariableNode struct {
-	token Token
-	value string
+	Token Token  `json:"token"`
+	Value string `json:"value"`
 }
 
 func NewVariableNode(token Token, context *Context) VariableNode {
 	return VariableNode{token, ""}
 }
 
-func (n VariableNode) Render(context Context) string {
+func (n VariableNode) Render(context *Context) string {
 	//return n.value
-	variable := strings.Replace(n.token.content, " ", "", -1)
+	variable := strings.Replace(n.Token.Content, " ", "", -1)
 	if result, err := context.data.Resolve(variable); err == nil {
 		return result
 	} else {
-		return ""
+		context.AddUnresolvedVariable(n)
+		return "{}"
 	}
 }
 
 func (n VariableNode) String() string {
-	return fmt.Sprintf("Type: VariableNode, Token: %v", n.token)
+	return fmt.Sprintf("Type: VariableNode, Token: %v", n.Token)
 }
 
 type UnresolvedVariableNode struct {
 	variableNode Node
 }
 
-func (n UnresolvedVariableNode) Render(context Context) string {
+func (n UnresolvedVariableNode) Render(context *Context) string {
 	context.AddUnresolvedVariable(n.variableNode.(VariableNode))
 	return "{}"
 }
@@ -58,12 +59,12 @@ type TextNode struct {
 	token Token
 }
 
-func (n TextNode) Render(context Context) string {
-	stripped := strings.Replace(n.token.content, " ", "", -1)
+func (n TextNode) Render(context *Context) string {
+	stripped := strings.Replace(n.token.Content, " ", "", -1)
 	if stripped == "" || stripped == "\n" {
 		return stripped
 	}
-	return n.token.content
+	return n.token.Content
 }
 
 func (n TextNode) String() string {
@@ -80,7 +81,7 @@ type BlockNode struct {
 }
 
 func NewBlockNode(token Token, parsedNodes []Node, context *Context) BlockNode {
-	bits := strings.Split(token.content, " ")
+	bits := strings.Split(token.Content, " ")
 	parameter := bits[1]
 	var newNode BlockNode
 
@@ -94,9 +95,9 @@ func NewBlockNode(token Token, parsedNodes []Node, context *Context) BlockNode {
 	return newNode
 }
 
-func (n BlockNode) Render(context Context) string {
+func (n BlockNode) Render(context *Context) string {
 	var result string
-	bits := strings.Split(n.token.content, " ")
+	bits := strings.Split(n.token.Content, " ")
 	parameter := bits[1]
 
 	if n.placeholder == true {
@@ -119,7 +120,7 @@ type ExtendsNode struct {
 }
 
 func NewExtendsNode(token Token, context *Context) ExtendsNode {
-	bits := strings.Split(token.content, " ")
+	bits := strings.Split(token.Content, " ")
 	parameter := bits[1]
 	templateSource := ReadTemplate(parameter)
 	parser := NewParser(templateSource, context)
@@ -127,7 +128,7 @@ func NewExtendsNode(token Token, context *Context) ExtendsNode {
 	return ExtendsNode{token, nodes}
 }
 
-func (n ExtendsNode) Render(context Context) string {
+func (n ExtendsNode) Render(context *Context) string {
 	return RenderNodeList(n.nodes, context)
 }
 
@@ -149,7 +150,7 @@ func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
 	var loopVariable string
 	var loopArrayName string
 	isKeyValuePair := false
-	bits := strings.Split(token.content, " ")
+	bits := strings.Split(token.Content, " ")
 
 	if len(bits) == 5 {
 		isKeyValuePair = true
@@ -171,7 +172,7 @@ func NewForNode(token Token, parsedNodes []Node, context *Context) ForNode {
 	}
 }
 
-func (n ForNode) Render(context Context) string {
+func (n ForNode) Render(context *Context) string {
 	var rendered strings.Builder
 	variables := n.GetForLoopData(context.data)
 	l := len(variables)
@@ -225,8 +226,8 @@ type ForLoopVariableNode struct {
 	forLoop  ForNode
 }
 
-func (n ForLoopVariableNode) Render(context Context) string {
-	keys := strings.Split(n.node.token.content, ".")
+func (n ForLoopVariableNode) Render(context *Context) string {
+	keys := strings.Split(n.node.Token.Content, ".")
 	firstKey := keys[0]
 	context.AddToContextData(n.forLoop.loopContext, "forloop")
 
@@ -246,7 +247,7 @@ func (n ForLoopVariableNode) Render(context Context) string {
 		}
 	} else {
 		// object lookup in variable context
-		if r, err := context.data.Resolve(n.node.token.content); err == nil {
+		if r, err := context.data.Resolve(n.node.Token.Content); err == nil {
 			result = r
 		} else {
 			unresolvedNode := UnresolvedVariableNode{n.node}
@@ -297,9 +298,9 @@ type UrlNode struct {
 	token Token
 }
 
-func (n UrlNode) Render(context Context) string {
+func (n UrlNode) Render(context *Context) string {
 	var pattern string
-	bits := strings.Split(n.token.content, " ")
+	bits := strings.Split(n.token.Content, " ")
 	viewName := strings.Trim(bits[1], `"'`)
 	http_host, _ := context.data.Resolve("http_host")
 
@@ -320,7 +321,7 @@ func (n UrlNode) Render(context Context) string {
 }
 
 func (n UrlNode) String() string {
-	return n.token.content
+	return n.token.Content
 }
 
 type UrlDefinition struct {
@@ -332,8 +333,8 @@ type StaticNode struct {
 	token Token
 }
 
-func (n StaticNode) Render(context Context) string {
-	bits := strings.Split(n.token.content, " ")
+func (n StaticNode) Render(context *Context) string {
+	bits := strings.Split(n.token.Content, " ")
 	url := strings.Trim(bits[1], `"'`)
 	http_host, _ := context.data.Resolve("http_host")
 	static_url, _ := context.data.Resolve("static_url")
@@ -341,12 +342,12 @@ func (n StaticNode) Render(context Context) string {
 }
 
 func (n StaticNode) String() string {
-	return "Type: StaticNode \n" + n.token.content
+	return "Type: StaticNode \n" + n.token.Content
 }
 
 type CsrfNode struct{}
 
-func (n CsrfNode) Render(context Context) string {
+func (n CsrfNode) Render(context *Context) string {
 	csrfToken, _ := context.data.Resolve("cookies.CSRF_TOKEN")
 	return fmt.Sprintf(`<input type="hidden" name="csrfmiddlewaretoken" value="%s">`, csrfToken)
 }

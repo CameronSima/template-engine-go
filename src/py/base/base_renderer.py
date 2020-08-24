@@ -32,9 +32,17 @@ class Template:
             context.encode('utf-8')
         )
         result = json.loads(result)
-        return self.post_process(result['result'], result['functionCalls'])
 
-    def post_process(self, formatted_str, pythonNodes):
+        print("RESULT IN RENDER")
+        print(result)
+        return self.post_process(result)
+
+    def post_process(self, result):
+        formatted_str = result['result']
+        python_nodes = result['functionCalls']
+        unresolved_vars = result['unresolvedVariables']
+        all_pre_processed = python_nodes + unresolved_vars
+
         """
         Anything that wasn't resolvable from context (dict values, arrays, etc)
         we'll try to resolve here as a python callable, either from our dict of 
@@ -42,20 +50,25 @@ class Template:
         """
         processed_values = []
 
-        for pNode in pythonNodes:
-            print("PYTHO NODE")
-            print(pNode)
-            func = self.python_funcs[pNode['functionName']]
-            processed_values.append(func(*pNode['parameters']))
+        for node in all_pre_processed:
+            print("unprocessed NODE")
+            print(node)
+
+            if 'token' in node:
+                # is a regular unresolved variable, not a function
+                value = safeget(self.original_context, *node['token']['Content'].split('.'))
+                print("VALUE")
+                print(value)
+                processed_values.append(value)
+                
+            else:
+                #func = self.python_funcs[node['functionName']]
+                func = self.original_context[node['functionName']]
+                processed_values.append(func(*node['parameters']))
         return formatted_str.format(*processed_values)
 
     def get_python_funcs(self):
-        def test_func(param1, param2):
-            return param1 + param2
-
-        return {
-            'custom_func': test_func
-        }
+        return {}
 
     def prepare_context(self, context, request=None):
         func_names = {funcName: 1 for funcName, _ in self.python_funcs.items()}
@@ -68,3 +81,15 @@ def is_serializable(data):
         return True
     except (TypeError, OverflowError):
         return False
+
+def safeget(dct, *keys):
+    for key in keys:
+        try:
+            dct = dct[key]
+        except TypeError:
+            # dont think this even exists in Django, might delte it
+            dct = getattr(dct, key.replace('()', ''))
+
+        except KeyError:
+            return None
+    return dct

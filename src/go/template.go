@@ -12,7 +12,7 @@ func (t Template) Render() string {
 
 	// fmt.Println("Context")
 	// fmt.Println(t.context.render_context)
-	return RenderNodeList(nodes, *t.context)
+	return RenderNodeList(nodes, t.context)
 }
 
 func NewTemplate(source string, context Context) Template {

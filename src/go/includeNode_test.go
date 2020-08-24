@@ -18,7 +18,7 @@ func TestIncludeNode(t *testing.T) {
 	c := NewContext("{}")
 	parser := NewParser(testSource, &c)
 	nodes := parser.Parse(make([]string, 0))
-	strippedResult := strings.Replace(RenderNodeList(nodes, c), "\n", "", -1)
-	strippedResult = strings.Replace(RenderNodeList(nodes, c), " ", "", -1)
+	strippedResult := strings.Replace(RenderNodeList(nodes, &c), "\n", "", -1)
+	strippedResult = strings.Replace(RenderNodeList(nodes, &c), " ", "", -1)
 	assert.Equal(t, strippedResult, "\n\t<p>hi</p>\n\t<p>hi</p>\n\t<p>theend</p>")
 }

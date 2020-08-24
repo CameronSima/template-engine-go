@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'django.contrib.staticfiles'
 ]
 
 MIDDLEWARE = [
@@ -53,7 +53,7 @@ ROOT_URLCONF = 'test_app.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'template_engine_go.main.Phantom',
+        'BACKEND': 'template_engine_go.py.main.Phantom',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {

@@ -13,7 +13,7 @@ type PythonNode struct {
 }
 
 func NewPythonNode(token Token, context *Context) Node {
-	bits := strings.Split(token.content, " ")
+	bits := strings.Split(token.Content, " ")
 	functionName := bits[0]
 	params := bits[1:]
 	resolvedParams := make([]string, 0)
@@ -36,7 +36,7 @@ func NewPythonNode(token Token, context *Context) Node {
 	return n
 }
 
-func (n PythonNode) Render(context Context) string {
+func (n PythonNode) Render(context *Context) string {
 	return "{}"
 }
 

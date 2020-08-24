@@ -19,7 +19,7 @@ func (p *Parser) Parse(parseUntil []string) []Node {
 		switch token.tokenType {
 		case TOKEN_VAR:
 			var node Node
-			node = NewVariableNode(token, p.context)s
+			node = NewVariableNode(token, p.context)
 			nodes = append(nodes, node)
 
 		case TOKEN_TEXT:
@@ -27,7 +27,7 @@ func (p *Parser) Parse(parseUntil []string) []Node {
 			nodes = append(nodes, node)
 
 		case TOKEN_BLOCK:
-			bits := strings.Split(token.content, " ")
+			bits := strings.Split(token.Content, " ")
 			command := bits[0]
 
 			if Contains(parseUntil, command) {

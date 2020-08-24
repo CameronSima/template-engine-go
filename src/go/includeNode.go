@@ -11,7 +11,7 @@ type IncludeNode struct {
 }
 
 func NewIncludeNode(token Token, context *Context) IncludeNode {
-	bits := strings.Split(token.content, " ")
+	bits := strings.Split(token.Content, " ")
 	parameter := bits[1]
 
 	if includeNode, exists := context.GetRenderContext(parameter); exists {
@@ -28,7 +28,7 @@ func NewIncludeNode(token Token, context *Context) IncludeNode {
 	}
 }
 
-func (n IncludeNode) Render(context Context) string {
+func (n IncludeNode) Render(context *Context) string {
 	return RenderNodeList(n.nodes, context)
 }
 
