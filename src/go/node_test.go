@@ -65,7 +65,7 @@ func TestNestedBlockNode(t *testing.T) {
 	nestedFNode := fNode.nodes[7].(ForNode)
 	result := RenderNodeList(nodes, &c)
 
-	assert.Equal(t, nestedFNode.token.content, "for num in n.l")
+	assert.Equal(t, nestedFNode.token.Content, "for num in n.l")
 	assert.Equal(t, nestedFNode.loopVariable, "num")
 	assert.Equal(t, nestedFNode.loopArrayName, "n.l")
 	assert.Equal(t, strings.Contains(result, "<p>1</p>"), true)
@@ -73,17 +73,6 @@ func TestNestedBlockNode(t *testing.T) {
 	assert.Equal(t, strings.Contains(result, "<p>3</p>"), true)
 	assert.Equal(t, strings.Contains(result, "<p>4</p>"), true)
 	assert.Equal(t, strings.Contains(result, "<p>5</p>"), true)
-}
-
-func TestDeeplyNestedBlockNode(t *testing.T) {
-	var testContext = `{"person": {"address": {"line1": "240 N 3rd St", "zip": 19106 }}}`
-	var testSource = `<p>{{ person.address.zip }}</p>`
-
-	c := NewContext(testContext)
-	parser := NewParser(testSource, &c)
-	nodes := parser.Parse(make([]string, 0))
-	result := RenderNodeList(nodes, c)
-	assert.Equal(t, "<p>19106</p>", result)
 }
 
 func TestUrlNode(t *testing.T) {
